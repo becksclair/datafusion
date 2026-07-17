@@ -27,6 +27,7 @@ pub mod length;
 pub mod like;
 pub mod luhn_check;
 pub mod make_valid_utf8;
+pub mod regexp_extract;
 pub mod soundex;
 pub mod space;
 pub mod substring;
@@ -50,9 +51,11 @@ make_udf_function!(substring::SparkSubstring, substring);
 make_udf_function!(base64::SparkUnBase64, unbase64);
 make_udf_function!(soundex::SparkSoundex, soundex);
 make_udf_function!(make_valid_utf8::SparkMakeValidUtf8, make_valid_utf8);
+make_udf_function!(regexp_extract::SparkRegexpExtract, regexp_extract);
 make_udf_function!(is_valid_utf8::SparkIsValidUtf8, is_valid_utf8);
 
 pub mod expr_fn {
+    use datafusion_expr::Expr;
     use datafusion_functions::export_functions;
 
     export_functions!((
@@ -127,6 +130,19 @@ pub mod expr_fn {
         "Returns the original string if str is a valid UTF-8 string, otherwise returns a new string whose invalid UTF8 byte sequences are replaced using the UNICODE replacement character U+FFFD.",
         str
     ));
+
+    // `export_functions!` supports fixed or vector arity, so use a typed wrapper
+    // for Spark's optional `idx` argument.
+    /// Extracts group `idx` from the first regular-expression match.
+    ///
+    /// Passing `None` for `idx` uses Spark's default group index of one.
+    pub fn regexp_extract(str: Expr, regexp: Expr, idx: Option<Expr>) -> Expr {
+        let mut args = vec![str, regexp];
+        if let Some(idx) = idx {
+            args.push(idx);
+        }
+        super::regexp_extract().call(args)
+    }
 }
 
 pub fn functions() -> Vec<Arc<ScalarUDF>> {
@@ -146,6 +162,7 @@ pub fn functions() -> Vec<Arc<ScalarUDF>> {
         unbase64(),
         soundex(),
         make_valid_utf8(),
+        regexp_extract(),
         is_valid_utf8(),
     ]
 }

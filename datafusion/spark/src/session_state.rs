@@ -97,6 +97,10 @@ mod tests {
             state.scalar_functions().contains_key("sha2"),
             "Apache Spark scalar function 'sha2' should be registered"
         );
+        assert!(
+            state.scalar_functions().contains_key("regexp_extract"),
+            "Apache Spark scalar function 'regexp_extract' should be registered"
+        );
 
         assert!(
             state.aggregate_functions().contains_key("try_sum"),
